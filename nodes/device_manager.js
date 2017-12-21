@@ -19,7 +19,7 @@ module.exports = function(RED) {
     var cfEnv = require("cfenv");
     var IBMIoTF = require('ibmiotf');
 
-    var appClient;
+    // var appClient;
 
     //support for multiple orgs
     var wiot_services  = cfEnv.getAppEnv().services['iotf-service'];
@@ -49,8 +49,9 @@ module.exports = function(RED) {
           "auth-key": creds.user,
           "auth-token": creds.password
           };
-        appClient = new IBMIoTF.IotfApplication(wiotp_creds);
-
+        let appClient = new IBMIoTF.IotfApplication(wiotp_creds);
+        
+        return appClient;
     }
     //initialize with Bluemix service
     connectBluemix();
@@ -80,11 +81,13 @@ module.exports = function(RED) {
 
     RED.httpAdmin.post('/watsoniot/devicemanager/newapikey', function(req,res) {
 
+      var appClient;
+
       if(req.body.credentials && req.body.credentials.user && req.body.credentials.password) {
-        connectApiKey(req.body.credentials);
+        appClient = connectApiKey(req.body.credentials);
       } else {
         var deviceNode = RED.nodes.getNode(req.body.id);
-        connectApiKey(deviceNode.credentials);
+        appClient = connectApiKey(deviceNode.credentials);
       }
 
       res.status(201).send('success');
@@ -94,6 +97,7 @@ module.exports = function(RED) {
         RED.nodes.createNode(this,config);
 
         var authSelected = config.auth;
+        var appClient;
 
         if(authSelected === 'bluemix') {
 
@@ -102,7 +106,7 @@ module.exports = function(RED) {
         } else if(authSelected === 'api'){
 
           var deviceNode = RED.nodes.getNode(config.apiKey);
-          connectApiKey(deviceNode.credentials);
+          appClient = connectApiKey(deviceNode.credentials);
 
         }
         var node = this;
